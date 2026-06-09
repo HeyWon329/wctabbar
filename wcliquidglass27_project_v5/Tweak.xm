@@ -2631,7 +2631,7 @@ static void WCLG27PreciseApplyTabBarController(UIViewController *vc) {
 %hook MMInputMsgReferView
 - (void)layoutSubviews {
     %orig;
-    WCLG27PreciseApplyChatInputView((UIView *)self.superview ?: (UIView *)self);
+    WCLG27PreciseApplyChatInputView(((UIView *)self).superview ?: (UIView *)self);
 }
 %end
 
@@ -2639,12 +2639,12 @@ static void WCLG27PreciseApplyTabBarController(UIViewController *vc) {
 - (void)viewDidAppear:(BOOL)animated {
     %orig(animated);
     WCLG27PreciseApplyNavigationForController((UIViewController *)self);
-    if (WCLG27Feature(kWCLG27FeatureInputGlass, NO)) WCLG27ScanViewTree(self.view, 0);
+    if (WCLG27Feature(kWCLG27FeatureInputGlass, NO)) WCLG27ScanViewTree(((UIViewController *)self).view, 0);
 }
 - (void)viewDidLayoutSubviews {
     %orig;
     WCLG27PreciseApplyNavigationForController((UIViewController *)self);
-    if (WCLG27Feature(kWCLG27FeatureInputGlass, NO)) WCLG27ScanViewTree(self.view, 0);
+    if (WCLG27Feature(kWCLG27FeatureInputGlass, NO)) WCLG27ScanViewTree(((UIViewController *)self).view, 0);
 }
 %end
 
@@ -2665,12 +2665,12 @@ static void WCLG27PreciseApplyTabBarController(UIViewController *vc) {
 - (void)viewDidAppear:(BOOL)animated {
     %orig(animated);
     WCLG27PreciseApplyNavigationForController((UIViewController *)self);
-    if (WCLG27Feature(kWCLG27FeatureSearchGlass, NO)) WCLG27ScanViewTree(self.view, 0);
+    if (WCLG27Feature(kWCLG27FeatureSearchGlass, NO)) WCLG27ScanViewTree(((UIViewController *)self).view, 0);
 }
 - (void)viewDidLayoutSubviews {
     %orig;
     WCLG27PreciseApplyNavigationForController((UIViewController *)self);
-    if (WCLG27Feature(kWCLG27FeatureSearchGlass, NO)) WCLG27ScanViewTree(self.view, 0);
+    if (WCLG27Feature(kWCLG27FeatureSearchGlass, NO)) WCLG27ScanViewTree(((UIViewController *)self).view, 0);
 }
 %end
 
@@ -2709,11 +2709,11 @@ static void WCLG27PreciseApplyTabBarController(UIViewController *vc) {
 %hook CellSearchBarViewController
 - (void)viewDidAppear:(BOOL)animated {
     %orig(animated);
-    if (WCLG27Feature(kWCLG27FeatureSearchGlass, NO)) WCLG27ScanViewTree(self.view, 0);
+    if (WCLG27Feature(kWCLG27FeatureSearchGlass, NO)) WCLG27ScanViewTree(((UIViewController *)self).view, 0);
 }
 - (void)viewDidLayoutSubviews {
     %orig;
-    if (WCLG27Feature(kWCLG27FeatureSearchGlass, NO)) WCLG27ScanViewTree(self.view, 0);
+    if (WCLG27Feature(kWCLG27FeatureSearchGlass, NO)) WCLG27ScanViewTree(((UIViewController *)self).view, 0);
 }
 %end
 
