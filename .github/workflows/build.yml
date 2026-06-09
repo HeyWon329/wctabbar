@@ -1,0 +1,95 @@
+name: Build WCLiquidGlass27 Dylib
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+    paths:
+      - "wcliquidglass27_project_v5/**"
+      - ".github/workflows/build.yml"
+
+jobs:
+  build-dylib:
+    name: Build wcliquidglass27 dylib
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        shell: bash
+        run: |
+          set -e
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer || true
+          xcodebuild -version
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -e
+          brew update
+          brew install make ldid
+          echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
+
+      - name: Install Theos
+        shell: bash
+        run: |
+          set -e
+          git clone --recursive https://github.com/theos/theos.git "$HOME/theos"
+          echo "THEOS=$HOME/theos" >> "$GITHUB_ENV"
+          echo "$HOME/theos/bin" >> "$GITHUB_PATH"
+
+      - name: Build release dylib
+        shell: bash
+        run: |
+          set -e
+          cd "wcliquidglass27_project_v5"
+          make clean || true
+          make FINALPACKAGE=1 DEBUG=0
+
+      - name: Collect real dylib output
+        shell: bash
+        run: |
+          set -e
+          OUT="artifacts/wcliquidglass27_project_v5-dylib"
+          mkdir -p "$OUT"
+
+          echo "Searching real dylib candidates..."
+          find "wcliquidglass27_project_v5/.theos" -type f -name "wcliquidglass27.dylib" \
+            ! -path "*.dSYM/*" \
+            ! -path "*/DWARF/*" \
+            -print
+
+          REAL_DYLIB=""
+          while IFS= read -r f; do
+            INFO="$(file "$f")"
+            echo "$INFO"
+            if echo "$INFO" | grep -qi "dynamically linked shared library"; then
+              REAL_DYLIB="$f"
+              break
+            fi
+          done < <(find "wcliquidglass27_project_v5/.theos" -type f -name "wcliquidglass27.dylib" \
+                    ! -path "*.dSYM/*" \
+                    ! -path "*/DWARF/*" \
+                    -print)
+
+          if [ -z "$REAL_DYLIB" ]; then
+            echo "ERROR: real dylib not found. Refusing to upload dSYM companion file."
+            exit 1
+          fi
+
+          cp "$REAL_DYLIB" "$OUT/wcliquidglass27.dylib"
+          cp "wcliquidglass27_project_v5/wcliquidglass27.plist" "$OUT/" || true
+
+          echo "Selected dylib:"
+          file "$OUT/wcliquidglass27.dylib"
+          echo "Output files:"
+          ls -lah "$OUT"
+
+      - name: Upload dylib artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wcliquidglass27_project_v5-dylib
+          path: artifacts/wcliquidglass27_project_v5-dylib
+          if-no-files-found: error
