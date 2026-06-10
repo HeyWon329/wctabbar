@@ -1,6 +1,0 @@
-# Theos build outputs
-.theos/
-packages/
-*.deb
-*.dylib
-.DS_Store
