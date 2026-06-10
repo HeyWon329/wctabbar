@@ -1,30 +1,23 @@
-# wcliquidglass27 original modules style v7
+# wcliquidglass27 original style safe reset v9
 
-只包含 GitHub Actions 编译 `wcliquidglass27.dylib` 的必要文件。
+这是回退到之前能打开的 `original_style_tabbar` 稳定结构后的安全重置版。
 
-## 内容
+## 重点
 
-- `.github/workflows/build.yml`
-- `wcliquidglass27_project_v5/`
-- `README.md`
-
-## 这版重点
-
-按原插件风格继续重写这些模块，并保留独立开关：
-
-1. 底部 TabBar 原插件风格稳定版
-2. 聊天标题胶囊
-3. 聊天输入栏玻璃
-4. 长按菜单玻璃
-5. 搜索框 / 主页搜索按钮 / 底部搜索按钮
-6. 聊天气泡/卡片玻璃
-
-## 实现风格
-
-- 系统 hook 优先，不硬 hook 一堆微信私有类
-- 通过 className / view 尺寸 / 屏幕位置过滤真实控件
-- 使用独立 glass host，不移动原控件
-- 默认所有功能关闭
-- 每个模块独立开关，方便逐个排查
-- 不包含 cleaner
+- 基于之前能打开的版本，不基于 v7/v8 闪退分支
+- 不加入新的 aggressive hook
+- 不加入全局 UIView hook
+- 不修改启动流程
 - 不强制 headerpad
+- 不包含 cleaner
+- 只保留 GitHub Actions 编译必要文件
+- 配置前缀改为 `wclg27safe_`，避免读取旧版本已经开启的异常配置
+
+## 测试
+
+首次安装后所有功能重新默认关闭。先确认微信能打开，再只开：
+
+1. 总开关
+2. 底部 TabBar 原插件风格
+
+确认稳定后再开其他功能。
