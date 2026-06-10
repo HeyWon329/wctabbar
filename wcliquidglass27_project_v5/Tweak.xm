@@ -43,31 +43,16 @@ static void WCLG27OrigUpdateLiquidPlatterLayers(UIView *host, CGFloat alpha);
 static void WCLG27OrigBringTabBarItemViewsToFront(UITabBar *tabBar);
 
 
-// Original-module switch helper declarations.
-static BOOL WCLG27IsLongPressMenuLike(UIView *view, NSString *cls);
-static void WCLG27ApplyLongPressMenuGlass(UIView *view);
-
-
-static UIView *WCLG27FindTextInputViewInView(UIView *view, NSInteger depth);
-// Original-style module helper declarations.
-static void WCLG27OrigDecorateGlassHost(UIView *host, CGFloat alpha, CGFloat radius, BOOL shadow);
-static UILabel *WCLG27OrigFindLabelInView(UIView *view, NSInteger depth);
-static UIView *WCLG27OrigFindInputToolContainerFromInput(UIView *input);
-static BOOL WCLG27OrigLooksLikeInputToolView(UIView *view, NSString *cls);
-static CGRect WCLG27OrigInputToolPlatterFrame(UIView *container);
-static BOOL WCLG27OrigLooksLikeSearchView(UIView *view, NSString *cls);
-static CGRect WCLG27OrigSearchPlatterFrame(UIView *container, UIView *input);
-static BOOL WCLG27OrigLooksLikeBubbleView(UIView *view, NSString *cls);
-static void WCLG27OrigApplyChatBubbleGlassToMessageView(UIView *view);
-static void WCLG27OrigApplySearchTabBarToButton(UIButton *button, CGFloat alpha);
-static void WCLG27OrigInstallKeyboardObserver(void);
+// Stable original-style visual helper declarations.
+static CAGradientLayer *WCLG27StableGradientLayer(UIView *view, NSString *name);
+static void WCLG27StablePolishGlassHost(UIView *host, CGFloat alpha, CGFloat radius, BOOL shadow);
+static UIView *WCLG27StableBetterInputContainer(UIView *view, UIView *input);
 
 static const NSInteger kWCLG27GlassTag = 927027;
 static const NSInteger kWCLG27OverlayTag = 927028;
 static const NSInteger kWCLG27SearchButtonTag = 927127;
 static const NSInteger kWCLG27HomeSearchButtonTag = 927128;
 static const NSInteger kWCLG27FloatingBallTag = 927227;
-static const NSInteger kWCLG27TitleLabelTag = 927327;
 static const void *kWCLG27GlassHostKey = &kWCLG27GlassHostKey;
 static const void *kWCLG27LastScanKey = &kWCLG27LastScanKey;
 static const void *kWCLG27TabSearchButtonKey = &kWCLG27TabSearchButtonKey;
@@ -86,7 +71,6 @@ static NSString *const kWCLG27FeatureNavBar = @"wclg27m_feature_navbar";
 static NSString *const kWCLG27FeatureSearchGlass = @"wclg27m_feature_search_glass";
 static NSString *const kWCLG27FeatureInputGlass = @"wclg27m_feature_input_glass";
 static NSString *const kWCLG27FeatureBubbleGlass = @"wclg27m_feature_bubble_glass";
-static NSString *const kWCLG27FeatureLongPressMenu = @"wclg27m_feature_long_press_menu";
 static NSString *const kWCLG27FeatureChatTitleCapsule = @"wclg27m_feature_chat_title_capsule";
 static NSString *const kWCLG27FeatureMomentsNav = @"wclg27m_feature_moments_nav";
 static NSString *const kWCLG27FeatureHideHomeTitle = @"wclg27m_feature_hide_home_title";
@@ -102,7 +86,6 @@ static NSString *const kWCLG27StrengthNavBar = @"wclg27m_strength_navbar";
 static NSString *const kWCLG27StrengthSearch = @"wclg27m_strength_search";
 static NSString *const kWCLG27StrengthInput = @"wclg27m_strength_input";
 static NSString *const kWCLG27StrengthBubble = @"wclg27m_strength_bubble";
-static NSString *const kWCLG27StrengthLongPressMenu = @"wclg27m_strength_long_press_menu";
 static NSString *const kWCLG27StrengthTitle = @"wclg27m_strength_title";
 static NSString *const kWCLG27StrengthMoments = @"wclg27m_strength_moments";
 
@@ -276,16 +259,113 @@ static UIVisualEffect *WCLG27CreateEffect(void) {
     return [UIBlurEffect effectWithStyle:UIBlurEffectStyleLight];
 }
 
-static void WCLG27ApplyLayerStyle(UIView *host, CGFloat cornerRadius, CGFloat alpha) {
+
+#pragma mark - Stable Original-Style Visual Helpers
+
+static CAGradientLayer *WCLG27StableGradientLayer(UIView *view, NSString *name) {
+    if (!view || !name) return nil;
+    for (CALayer *layer in view.layer.sublayers) {
+        if ([layer.name isEqualToString:name] && [layer isKindOfClass:CAGradientLayer.class]) {
+            return (CAGradientLayer *)layer;
+        }
+    }
+    CAGradientLayer *layer = [CAGradientLayer layer];
+    layer.name = name;
+    layer.needsDisplayOnBoundsChange = YES;
+    [view.layer addSublayer:layer];
+    return layer;
+}
+
+static void WCLG27StablePolishGlassHost(UIView *host, CGFloat alpha, CGFloat radius, BOOL shadow) {
+    if (!host) return;
+
     host.alpha = alpha;
-    host.layer.cornerRadius = MIN(cornerRadius, MIN(CGRectGetWidth(host.bounds), CGRectGetHeight(host.bounds)) / 2.0);
+    host.clipsToBounds = NO;
+    host.layer.cornerRadius = MIN(radius, MIN(CGRectGetWidth(host.bounds), CGRectGetHeight(host.bounds)) / 2.0);
     if (@available(iOS 13.0, *)) host.layer.cornerCurve = kCACornerCurveContinuous;
-    host.layer.borderWidth = 0.5;
-    host.layer.borderColor = [[UIColor colorWithWhite:1.0 alpha:0.26] CGColor];
-    host.layer.shadowColor = [UIColor blackColor].CGColor;
-    host.layer.shadowOpacity = 0.10;
-    host.layer.shadowRadius = 14.0;
-    host.layer.shadowOffset = CGSizeMake(0, 5);
+    host.layer.borderWidth = 0.65;
+    host.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.26 * alpha].CGColor;
+
+    if (shadow) {
+        host.layer.shadowColor = [UIColor blackColor].CGColor;
+        host.layer.shadowOpacity = 0.14 * alpha;
+        host.layer.shadowRadius = 15.0;
+        host.layer.shadowOffset = CGSizeMake(0, 5);
+    } else {
+        host.layer.shadowOpacity = 0.06 * alpha;
+        host.layer.shadowRadius = 8.0;
+        host.layer.shadowOffset = CGSizeMake(0, 2);
+    }
+
+    UIVisualEffectView *effectView = nil;
+    UIView *tintView = nil;
+
+    for (UIView *sub in host.subviews) {
+        if ([sub isKindOfClass:[UIVisualEffectView class]]) effectView = (UIVisualEffectView *)sub;
+        if (sub.tag == kWCLG27GlassTag + 2) tintView = sub;
+    }
+
+    if (effectView) {
+        effectView.frame = host.bounds;
+        effectView.layer.cornerRadius = host.layer.cornerRadius;
+        effectView.clipsToBounds = YES;
+        effectView.effect = WCLG27CreateEffect();
+    }
+
+    if (tintView) {
+        tintView.frame = host.bounds;
+        tintView.layer.cornerRadius = host.layer.cornerRadius;
+        tintView.clipsToBounds = YES;
+        tintView.backgroundColor = [WCLG27TintColor() colorWithAlphaComponent:0.13 * alpha];
+    }
+
+    CAGradientLayer *top = WCLG27StableGradientLayer(host, @"wclg27_stable_top_highlight");
+    top.frame = CGRectMake(0, 0, host.bounds.size.width, MAX(14.0, host.bounds.size.height * 0.45));
+    top.cornerRadius = host.layer.cornerRadius;
+    top.startPoint = CGPointMake(0.5, 0.0);
+    top.endPoint = CGPointMake(0.5, 1.0);
+    top.colors = @[
+        (__bridge id)[UIColor colorWithWhite:1.0 alpha:0.42 * alpha].CGColor,
+        (__bridge id)[UIColor colorWithWhite:1.0 alpha:0.10 * alpha].CGColor,
+        (__bridge id)[UIColor clearColor].CGColor
+    ];
+
+    CAGradientLayer *shine = WCLG27StableGradientLayer(host, @"wclg27_stable_side_shine");
+    shine.frame = host.bounds;
+    shine.cornerRadius = host.layer.cornerRadius;
+    shine.startPoint = CGPointMake(0.0, 0.0);
+    shine.endPoint = CGPointMake(1.0, 1.0);
+    shine.colors = @[
+        (__bridge id)[UIColor colorWithWhite:1.0 alpha:0.15 * alpha].CGColor,
+        (__bridge id)[UIColor clearColor].CGColor,
+        (__bridge id)[UIColor colorWithWhite:1.0 alpha:0.08 * alpha].CGColor
+    ];
+    shine.locations = @[@0.0, @0.58, @1.0];
+}
+
+static UIView *WCLG27StableBetterInputContainer(UIView *view, UIView *input) {
+    if (!input) return view;
+    UIView *best = input.superview ?: view;
+    UIView *cur = input;
+    CGFloat screenH = UIScreen.mainScreen.bounds.size.height;
+
+    for (NSInteger i = 0; i < 5 && cur; i++) {
+        CGRect b = cur.bounds;
+        CGRect screen = [cur convertRect:b toView:nil];
+        NSString *cls = NSStringFromClass([cur class]);
+        BOOL nearBottom = CGRectGetMaxY(screen) > screenH * 0.58;
+        BOOL sizeOK = CGRectGetWidth(b) >= 160 && CGRectGetHeight(b) >= 32 && CGRectGetHeight(b) <= 160;
+        BOOL nameOK = WCLG27StringContains(cls, @[@"Input", @"Tool", @"Composer", @"Bar", @"Text", @"Message"]);
+        if (nearBottom && sizeOK && nameOK) return cur;
+        if (nearBottom && sizeOK) best = cur;
+        cur = cur.superview;
+    }
+
+    return best ?: view;
+}
+
+static void WCLG27ApplyLayerStyle(UIView *host, CGFloat cornerRadius, CGFloat alpha) {
+    WCLG27StablePolishGlassHost(host, alpha, cornerRadius, YES);
 }
 
 static UIView *WCLG27EnsureGlassHost(UIView *target, CGFloat cornerRadius, CGFloat alpha) {
@@ -297,7 +377,7 @@ static UIView *WCLG27EnsureGlassHost(UIView *target, CGFloat cornerRadius, CGFlo
         host.tag = kWCLG27GlassTag;
         host.userInteractionEnabled = NO;
         host.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        host.clipsToBounds = YES;
+        host.clipsToBounds = NO;
         host.backgroundColor = [UIColor clearColor];
         [target insertSubview:host atIndex:0];
         objc_setAssociatedObject(target, kWCLG27GlassHostKey, host, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -307,25 +387,18 @@ static UIView *WCLG27EnsureGlassHost(UIView *target, CGFloat cornerRadius, CGFlo
         effectView.userInteractionEnabled = NO;
         effectView.frame = host.bounds;
         effectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        effectView.clipsToBounds = YES;
         [host addSubview:effectView];
 
-        UIView *shine = [[UIView alloc] initWithFrame:host.bounds];
-        shine.tag = kWCLG27GlassTag + 2;
-        shine.userInteractionEnabled = NO;
-        shine.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        [host addSubview:shine];
+        UIView *tint = [[UIView alloc] initWithFrame:host.bounds];
+        tint.tag = kWCLG27GlassTag + 2;
+        tint.userInteractionEnabled = NO;
+        tint.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        [host addSubview:tint];
     }
 
     host.frame = target.bounds;
-    WCLG27ApplyLayerStyle(host, cornerRadius, alpha);
-
-    for (UIView *sub in host.subviews) {
-        if (sub.tag == kWCLG27GlassTag + 1 && [sub isKindOfClass:[UIVisualEffectView class]]) {
-            ((UIVisualEffectView *)sub).effect = WCLG27CreateEffect();
-        } else if (sub.tag == kWCLG27GlassTag + 2) {
-            sub.backgroundColor = [WCLG27TintColor() colorWithAlphaComponent:0.12];
-        }
-    }
+    WCLG27StablePolishGlassHost(host, alpha, cornerRadius, YES);
     return host;
 }
 
@@ -354,7 +427,7 @@ static UIView *WCLG27EnsureGlassHostInFrame(UIView *target, CGRect frame, CGFloa
         host.tag = kWCLG27GlassTag;
         host.userInteractionEnabled = NO;
         host.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
-        host.clipsToBounds = YES;
+        host.clipsToBounds = NO;
         host.backgroundColor = [UIColor clearColor];
         [target insertSubview:host atIndex:0];
         objc_setAssociatedObject(target, kWCLG27GlassHostKey, host, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -364,26 +437,18 @@ static UIView *WCLG27EnsureGlassHostInFrame(UIView *target, CGRect frame, CGFloa
         effectView.userInteractionEnabled = NO;
         effectView.frame = host.bounds;
         effectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        effectView.clipsToBounds = YES;
         [host addSubview:effectView];
 
-        UIView *shine = [[UIView alloc] initWithFrame:host.bounds];
-        shine.tag = kWCLG27GlassTag + 2;
-        shine.userInteractionEnabled = NO;
-        shine.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        [host addSubview:shine];
+        UIView *tint = [[UIView alloc] initWithFrame:host.bounds];
+        tint.tag = kWCLG27GlassTag + 2;
+        tint.userInteractionEnabled = NO;
+        tint.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        [host addSubview:tint];
     }
 
     host.frame = frame;
-    WCLG27ApplyLayerStyle(host, cornerRadius, alpha);
-
-    for (UIView *sub in host.subviews) {
-        sub.frame = host.bounds;
-        if (sub.tag == kWCLG27GlassTag + 1 && [sub isKindOfClass:[UIVisualEffectView class]]) {
-            ((UIVisualEffectView *)sub).effect = WCLG27CreateEffect();
-        } else if (sub.tag == kWCLG27GlassTag + 2) {
-            sub.backgroundColor = [WCLG27TintColor() colorWithAlphaComponent:0.12];
-        }
-    }
+    WCLG27StablePolishGlassHost(host, alpha, cornerRadius, YES);
     return host;
 }
 
@@ -434,66 +499,6 @@ static CGRect WCLG27SearchGlassFrame(UIView *view) {
     return CGRectMake(horizontal, y, MAX(2.0, w - horizontal * 2.0), targetH);
 }
 
-
-
-
-#pragma mark - Original-style Search Glass Helpers
-
-static BOOL WCLG27OrigLooksLikeSearchView(UIView *view, NSString *cls) {
-    if (!view || view.hidden || view.alpha < 0.05 || !view.window) return NO;
-    if ([view isKindOfClass:[UITableView class]] ||
-        [view isKindOfClass:[UICollectionView class]] ||
-        [view isKindOfClass:[UINavigationBar class]] ||
-        [view isKindOfClass:[UITabBar class]]) return NO;
-
-    CGRect b = view.bounds;
-    if (CGRectGetWidth(b) < 90 || CGRectGetHeight(b) < 26 || CGRectGetHeight(b) > 88) return NO;
-
-    BOOL nameLike = WCLG27StringContains(cls, @[
-        @"Search", @"Find", @"SearchBar", @"SearchView", @"SearchField", @"SearchCell", @"UISearch"
-    ]);
-    if (nameLike) return YES;
-
-    UIView *input = WCLG27FindTextInputViewInView(view, 0);
-    if (input) {
-        NSString *placeholder = @"";
-        if ([input isKindOfClass:[UITextField class]]) placeholder = ((UITextField *)input).placeholder ?: @"";
-        if ([placeholder containsString:@"搜索"] ||
-            [placeholder rangeOfString:@"Search" options:NSCaseInsensitiveSearch].location != NSNotFound) {
-            return YES;
-        }
-    }
-
-    return NO;
-}
-
-static CGRect WCLG27OrigSearchPlatterFrame(UIView *container, UIView *input) {
-    if (input && input != container && input.superview) {
-        CGRect f = [input.superview convertRect:input.frame toView:container];
-        if (CGRectGetWidth(f) > 40 && CGRectGetHeight(f) > 20) {
-            return CGRectIntegral(CGRectInset(f, -2.0, -1.5));
-        }
-    }
-
-    CGRect b = container.bounds;
-    CGFloat w = CGRectGetWidth(b);
-    CGFloat h = CGRectGetHeight(b);
-    CGFloat insetX = (w > UIScreen.mainScreen.bounds.size.width * 0.70) ? 10.0 : 3.0;
-    CGFloat targetH = MIN(40.0, MAX(30.0, h - 8.0));
-    CGFloat y = MAX(2.0, (h - targetH) * 0.5);
-    return CGRectIntegral(CGRectMake(insetX, y, MAX(4.0, w - insetX * 2.0), targetH));
-}
-
-static void WCLG27OrigApplySearchTabBarToButton(UIButton *button, CGFloat alpha) {
-    if (!button) return;
-    CGFloat radius = MIN(22.0, MAX(16.0, CGRectGetHeight(button.bounds) / 2.0));
-    UIView *host = WCLG27EnsureGlassHost(button, radius, alpha);
-    if (host) {
-        WCLG27OrigDecorateGlassHost(host, alpha, radius, YES);
-        [button sendSubviewToBack:host];
-    }
-}
-
 static void WCLG27ApplySearchGlass(UIView *view) {
     if (!view || !WCLG27RuntimeEnabled()) return;
     if (!WCLG27Feature(kWCLG27FeatureSearchGlass, NO)) {
@@ -501,40 +506,25 @@ static void WCLG27ApplySearchGlass(UIView *view) {
         return;
     }
 
-    NSString *cls = NSStringFromClass([view class]);
-    if (!WCLG27OrigLooksLikeSearchView(view, cls)) return;
+    UITextField *field = WCLG27FindTextFieldInView(view, 0);
+    if (field) {
+        field.backgroundColor = [UIColor clearColor];
+        field.borderStyle = UITextBorderStyleNone;
+        field.layer.masksToBounds = NO;
 
-    UIView *input = WCLG27FindTextFieldInView(view, 0);
-    UIView *container = view;
-
-    if (input) {
-        UIView *parent = input.superview;
-        for (NSInteger i = 0; i < 4 && parent; i++) {
-            CGRect b = parent.bounds;
-            NSString *pcls = NSStringFromClass([parent class]);
-            if (CGRectGetWidth(b) >= 90 && CGRectGetHeight(b) >= 26 && CGRectGetHeight(b) <= 88 &&
-                WCLG27StringContains(pcls, @[@"Search", @"Find", @"Bar", @"Cell", @"Container", @"Field"])) {
-                container = parent;
-                break;
-            }
-            parent = parent.superview;
-        }
-
-        input.backgroundColor = [UIColor clearColor];
-        input.layer.masksToBounds = NO;
-        if ([input isKindOfClass:[UITextField class]]) {
-            ((UITextField *)input).borderStyle = UITextBorderStyleNone;
-        }
+        CGFloat alpha = WCLG27FeatureAlpha(kWCLG27StrengthSearch, 0.84);
+        CGFloat radius = MIN(19.0, CGRectGetHeight(field.bounds) / 2.0);
+        UIView *host = WCLG27EnsureGlassHostInFrame(field, CGRectInset(field.bounds, 0.0, 0.0), radius, alpha);
+        if (host) WCLG27StablePolishGlassHost(host, alpha, radius, NO);
+        return;
     }
 
-    CGRect frame = WCLG27OrigSearchPlatterFrame(container, input);
+    view.backgroundColor = [UIColor clearColor];
+    CGRect frame = WCLG27SearchGlassFrame(view);
     CGFloat alpha = WCLG27FeatureAlpha(kWCLG27StrengthSearch, 0.84);
-    CGFloat radius = MIN(20.0, MAX(14.0, CGRectGetHeight(frame) / 2.0));
-    UIView *host = WCLG27EnsureGlassHostInFrame(container, frame, radius, alpha);
-    if (host) {
-        WCLG27OrigDecorateGlassHost(host, alpha, radius, NO);
-        [container sendSubviewToBack:host];
-    }
+    CGFloat radius = MIN(19.0, CGRectGetHeight(frame) / 2.0);
+    UIView *host = WCLG27EnsureGlassHostInFrame(view, frame, radius, alpha);
+    if (host) WCLG27StablePolishGlassHost(host, alpha, radius, NO);
 }
 
 static void WCLG27RemoveGlassHost(UIView *target) {
@@ -760,7 +750,7 @@ static void WCLG27ApplyTabRightSearch(UITabBar *tabBar) {
     button.layer.cornerRadius = size / 2.0;
     if (@available(iOS 13.0, *)) button.layer.cornerCurve = kCACornerCurveContinuous;
     button.hidden = CGRectGetHeight(tabBar.bounds) < size + safeBottom;
-    WCLG27OrigApplySearchTabBarToButton(button, 0.92);
+    WCLG27EnsureGlassHost(button, size / 2.0, 0.92);
 }
 
 
@@ -1071,94 +1061,6 @@ static void WCLG27ApplyNavigationBar(UINavigationBar *bar) {
 
 
 
-
-#pragma mark - Original-style Shared Liquid Helpers
-
-static void WCLG27OrigDecorateGlassHost(UIView *host, CGFloat alpha, CGFloat radius, BOOL shadow) {
-    if (!host) return;
-    host.userInteractionEnabled = NO;
-    host.clipsToBounds = NO;
-    host.layer.cornerRadius = radius;
-    host.layer.masksToBounds = NO;
-    host.layer.borderWidth = 0.65;
-    host.layer.borderColor = [UIColor colorWithWhite:1 alpha:0.25 * alpha].CGColor;
-
-    if (shadow) {
-        host.layer.shadowColor = [UIColor blackColor].CGColor;
-        host.layer.shadowOpacity = 0.16 * alpha;
-        host.layer.shadowOffset = CGSizeMake(0, 5);
-        host.layer.shadowRadius = 16.0;
-    }
-
-    UIVisualEffectView *blur = nil;
-    UIView *tint = nil;
-    for (UIView *sub in host.subviews) {
-        if ([sub isKindOfClass:UIVisualEffectView.class]) blur = (UIVisualEffectView *)sub;
-        else if (sub.tag == kWCLG27OverlayTag) tint = sub;
-    }
-
-    if (!blur) {
-        UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemUltraThinMaterial];
-        blur = [[UIVisualEffectView alloc] initWithEffect:effect];
-        blur.userInteractionEnabled = NO;
-        blur.clipsToBounds = YES;
-        blur.layer.cornerRadius = radius;
-        [host insertSubview:blur atIndex:0];
-    }
-
-    if (!tint) {
-        tint = [[UIView alloc] initWithFrame:host.bounds];
-        tint.tag = kWCLG27OverlayTag;
-        tint.userInteractionEnabled = NO;
-        tint.clipsToBounds = YES;
-        tint.layer.cornerRadius = radius;
-        [host addSubview:tint];
-    }
-
-    blur.frame = host.bounds;
-    blur.layer.cornerRadius = radius;
-    tint.frame = host.bounds;
-    tint.layer.cornerRadius = radius;
-
-    UIColor *base = WCLG27TintColor();
-    CGFloat r = 1, g = 1, b = 1, a = 1;
-    [base getRed:&r green:&g blue:&b alpha:&a];
-    tint.backgroundColor = [UIColor colorWithRed:r green:g blue:b alpha:0.14 * alpha];
-
-    CAGradientLayer *top = WCLG27OrigGradientLayer(host, @"wclg27_module_top_highlight");
-    top.frame = CGRectMake(0, 0, host.bounds.size.width, MAX(14.0, host.bounds.size.height * 0.46));
-    top.cornerRadius = radius;
-    top.startPoint = CGPointMake(0.5, 0);
-    top.endPoint = CGPointMake(0.5, 1);
-    top.colors = @[
-        (__bridge id)[UIColor colorWithWhite:1 alpha:0.42 * alpha].CGColor,
-        (__bridge id)[UIColor colorWithWhite:1 alpha:0.10 * alpha].CGColor,
-        (__bridge id)[UIColor clearColor].CGColor
-    ];
-
-    CAGradientLayer *shine = WCLG27OrigGradientLayer(host, @"wclg27_module_side_shine");
-    shine.frame = host.bounds;
-    shine.cornerRadius = radius;
-    shine.startPoint = CGPointMake(0, 0);
-    shine.endPoint = CGPointMake(1, 1);
-    shine.colors = @[
-        (__bridge id)[UIColor colorWithWhite:1 alpha:0.16 * alpha].CGColor,
-        (__bridge id)[UIColor clearColor].CGColor,
-        (__bridge id)[UIColor colorWithWhite:1 alpha:0.08 * alpha].CGColor
-    ];
-    shine.locations = @[@0.0, @0.58, @1.0];
-}
-
-static UILabel *WCLG27OrigFindLabelInView(UIView *view, NSInteger depth) {
-    if (!view || depth > 4) return nil;
-    if ([view isKindOfClass:[UILabel class]]) return (UILabel *)view;
-    for (UIView *sub in view.subviews) {
-        UILabel *label = WCLG27OrigFindLabelInView(sub, depth + 1);
-        if (label) return label;
-    }
-    return nil;
-}
-
 #pragma mark - WCLG27 Search/Input Behavior Fix
 
 static UIView *WCLG27FindTextInputViewInView(UIView *view, NSInteger depth) {
@@ -1236,55 +1138,19 @@ static BOOL WCLG27HomePageAlreadyHasSearchBox(UIViewController *vc) {
 }
 
 static BOOL WCLG27InputContainerLooksLikeChatBar(UIView *view, NSString *cls) {
-    return WCLG27OrigLooksLikeInputToolView(view, cls);
-}
-
-static UIView *WCLG27OrigFindInputToolContainerFromInput(UIView *input) {
-    if (!input) return nil;
-    UIView *candidate = input;
-    UIView *best = input.superview ?: input;
-    CGFloat screenH = UIScreen.mainScreen.bounds.size.height;
-
-    for (NSInteger i = 0; i < 6 && candidate; i++) {
-        CGRect b = candidate.bounds;
-        CGRect screen = [candidate convertRect:b toView:nil];
-        NSString *cls = NSStringFromClass([candidate class]);
-        BOOL nearBottom = CGRectGetMaxY(screen) > screenH * 0.58;
-        BOOL sizeOK = CGRectGetWidth(b) >= 180 && CGRectGetHeight(b) >= 34 && CGRectGetHeight(b) <= 170;
-        BOOL classOK = WCLG27StringContains(cls, @[@"InputTool", @"InputBar", @"InputSet", @"ChatInput", @"Composer", @"ToolView", @"ToolBar", @"MMInput"]);
-        if (nearBottom && sizeOK && classOK) return candidate;
-        if (nearBottom && sizeOK) best = candidate;
-        candidate = candidate.superview;
-    }
-    return best;
-}
-
-static BOOL WCLG27OrigLooksLikeInputToolView(UIView *view, NSString *cls) {
     if (!view || view.hidden || view.alpha < 0.05 || !view.window) return NO;
-    if ([view isKindOfClass:[UIWindow class]] || [view isKindOfClass:[UITableView class]] || [view isKindOfClass:[UICollectionView class]] || [view isKindOfClass:[UINavigationBar class]] || [view isKindOfClass:[UITabBar class]]) return NO;
-
     CGRect b = view.bounds;
-    if (CGRectGetWidth(b) < 180 || CGRectGetHeight(b) < 34 || CGRectGetHeight(b) > 170) return NO;
+    if (CGRectGetWidth(b) < 180 || CGRectGetHeight(b) < 34 || CGRectGetHeight(b) > 150) return NO;
 
-    CGRect screen = [view convertRect:b toView:nil];
+    CGRect screen = [view convertRect:view.bounds toView:nil];
     CGFloat screenH = UIScreen.mainScreen.bounds.size.height;
-    if (CGRectGetMaxY(screen) < screenH * 0.58) return NO;
+    BOOL nearBottom = CGRectGetMaxY(screen) > screenH * 0.62;
+    if (!nearBottom) return NO;
 
-    BOOL nameLike = WCLG27StringContains(cls, @[@"InputTool", @"InputBar", @"InputSet", @"ChatInput", @"Composer", @"ToolView", @"ToolBar", @"MMInput", @"MessageInput"]);
-    BOOL hasInput = WCLG27FindTextInputViewInView(view, 0) != nil;
-    return nameLike || hasInput;
-}
+    UIView *input = WCLG27FindTextInputViewInView(view, 0);
+    if (input) return YES;
 
-static CGRect WCLG27OrigInputToolPlatterFrame(UIView *container) {
-    CGRect b = container.bounds;
-    CGFloat w = CGRectGetWidth(b);
-    CGFloat h = CGRectGetHeight(b);
-    if (w < 80 || h < 24) return b;
-
-    CGFloat insetX = 8.0;
-    CGFloat targetH = MIN(46.0, MAX(34.0, h - 8.0));
-    CGFloat y = MAX(4.0, (h - targetH) * 0.5);
-    return CGRectIntegral(CGRectMake(insetX, y, MAX(4.0, w - insetX * 2.0), targetH));
+    return WCLG27StringContains(cls, @[@"Input", @"Tool", @"Chat", @"Composer", @"Text", @"Message"]);
 }
 
 static CGRect WCLG27InputGlassFrameForContainer(UIView *container) {
@@ -1308,28 +1174,27 @@ static void WCLG27ApplyInputGlass(UIView *view) {
         return;
     }
 
-    NSString *cls = NSStringFromClass([view class]);
     UIView *input = WCLG27FindTextInputViewInView(view, 0);
-    UIView *container = input ? WCLG27OrigFindInputToolContainerFromInput(input) : view;
-
-    if (!WCLG27OrigLooksLikeInputToolView(container, NSStringFromClass([container class])) &&
-        !WCLG27OrigLooksLikeInputToolView(view, cls)) {
-        return;
-    }
+    UIView *container = WCLG27StableBetterInputContainer(view, input);
 
     if (input) {
         input.backgroundColor = [UIColor clearColor];
         input.layer.masksToBounds = NO;
-        if ([input isKindOfClass:[UITextField class]]) ((UITextField *)input).borderStyle = UITextBorderStyleNone;
+        if ([input isKindOfClass:[UITextField class]]) {
+            ((UITextField *)input).borderStyle = UITextBorderStyleNone;
+        }
     }
 
-    CGRect frame = WCLG27OrigInputToolPlatterFrame(container);
-    CGFloat alpha = WCLG27FeatureAlpha(kWCLG27StrengthInput, 0.86);
-    CGFloat radius = MIN(23.0, MAX(17.0, CGRectGetHeight(frame) / 2.0));
+    if (!container || CGRectGetWidth(container.bounds) < 40 || CGRectGetHeight(container.bounds) < 24) {
+        container = view;
+    }
 
+    CGRect frame = WCLG27InputGlassFrameForContainer(container);
+    CGFloat alpha = WCLG27FeatureAlpha(kWCLG27StrengthInput, 0.86);
+    CGFloat radius = MIN(23.0, CGRectGetHeight(frame) / 2.0);
     UIView *host = WCLG27EnsureGlassHostInFrame(container, frame, radius, alpha);
     if (host) {
-        WCLG27OrigDecorateGlassHost(host, alpha, radius, YES);
+        WCLG27StablePolishGlassHost(host, alpha, radius, YES);
         [container sendSubviewToBack:host];
     }
 }
@@ -1352,94 +1217,11 @@ static BOOL WCLG27IsSearchLike(UIView *view, NSString *cls) {
 }
 
 static BOOL WCLG27IsBubbleLike(UIView *view, NSString *cls) {
-    return WCLG27OrigLooksLikeBubbleView(view, cls);
-}
-
-static BOOL WCLG27OrigLooksLikeBubbleView(UIView *view, NSString *cls) {
-    if (!view || view.hidden || view.alpha < 0.05 || !view.window) return NO;
-    if (view.tag == kWCLG27GlassTag || view.tag == kWCLG27OverlayTag) return NO;
-    if ([view isKindOfClass:[UILabel class]] || [view isKindOfClass:[UIButton class]] || [view isKindOfClass:[UIImageView class]]) return NO;
-    if ([view isKindOfClass:[UITableView class]] || [view isKindOfClass:[UICollectionView class]] || [view isKindOfClass:[UITableViewCell class]] || [view isKindOfClass:[UICollectionViewCell class]]) return NO;
-
-    CGRect b = view.bounds;
-    CGFloat w = CGRectGetWidth(b);
-    CGFloat h = CGRectGetHeight(b);
-    if (w < 46 || h < 24) return NO;
-    if (w > UIScreen.mainScreen.bounds.size.width * 0.92 || h > UIScreen.mainScreen.bounds.size.height * 0.45) return NO;
-
-    BOOL nameLike = WCLG27StringContains(cls, @[
-        @"Bubble", @"MessageContent", @"MsgContent", @"ChatContent", @"MessageWrap",
-        @"RichCard", @"AppMsg", @"Emoticon", @"PayCard", @"VoiceMessage", @"ImageMessage"
-    ]);
-    if (!nameLike) return NO;
-
-    if (WCLG27StringContains(cls, @[@"Table", @"Collection", @"Scroll", @"Input", @"Tool", @"Menu", @"Search", @"Navigation", @"TabBar"])) return NO;
-    return YES;
-}
-
-static void WCLG27OrigApplyChatBubbleGlassToMessageView(UIView *view) {
-    if (!WCLG27RuntimeEnabled()) return;
-    if (!WCLG27Feature(kWCLG27FeatureBubbleGlass, NO)) return;
-    if (!view) return;
-
-    NSString *cls = NSStringFromClass([view class]);
-    if (!WCLG27OrigLooksLikeBubbleView(view, cls)) return;
-
-    view.backgroundColor = [UIColor clearColor];
-    view.layer.masksToBounds = NO;
-
-    CGFloat alpha = WCLG27FeatureAlpha(kWCLG27StrengthBubble, 0.74);
-    CGFloat radius = MIN(19.0, MAX(13.0, MIN(CGRectGetWidth(view.bounds), CGRectGetHeight(view.bounds)) / 5.0));
-    UIView *host = WCLG27EnsureGlassHost(view, radius, alpha);
-    if (host) {
-        WCLG27OrigDecorateGlassHost(host, alpha, radius, NO);
-        [view sendSubviewToBack:host];
-    }
-}
-
-
-#pragma mark - Original-style Long Press Menu Glass
-
-static BOOL WCLG27IsLongPressMenuLike(UIView *view, NSString *cls) {
     if (!view || view.hidden || view.alpha < 0.05) return NO;
-    if (view.tag == kWCLG27GlassTag || view.tag == kWCLG27OverlayTag || [view isKindOfClass:[UIWindow class]]) return NO;
-    if ([view isKindOfClass:[UITableView class]] || [view isKindOfClass:[UICollectionView class]] || [view isKindOfClass:[UINavigationBar class]] || [view isKindOfClass:[UITabBar class]]) return NO;
-
+    if ([view isKindOfClass:[UILabel class]] || [view isKindOfClass:[UIButton class]] || [view isKindOfClass:[UITableView class]] || [view isKindOfClass:[UICollectionView class]]) return NO;
     CGRect b = view.bounds;
-    CGFloat w = CGRectGetWidth(b);
-    CGFloat h = CGRectGetHeight(b);
-    if (w < 54 || h < 28) return NO;
-    if (w > UIScreen.mainScreen.bounds.size.width || h > UIScreen.mainScreen.bounds.size.height * 0.70) return NO;
-
-    BOOL looksMenu = WCLG27StringContains(cls, @[
-        @"ContextMenu", @"EditMenu", @"UIMenu", @"MenuView", @"MenuContainer",
-        @"Callout", @"UICallout", @"Platter", @"MenuCell"
-    ]);
-
-    if (!looksMenu) return NO;
-
-    if (WCLG27StringContains(cls, @[@"Navigation", @"TabBar", @"Table", @"Collection", @"Search", @"Keyboard"])) return NO;
-    return YES;
-}
-
-static void WCLG27ApplyLongPressMenuGlass(UIView *view) {
-    if (!WCLG27RuntimeEnabled()) return;
-    if (!WCLG27Feature(kWCLG27FeatureLongPressMenu, NO)) return;
-    if (!view) return;
-
-    NSString *cls = NSStringFromClass([view class]);
-    if (!WCLG27IsLongPressMenuLike(view, cls)) return;
-
-    view.backgroundColor = [UIColor clearColor];
-    view.layer.masksToBounds = NO;
-
-    CGFloat alpha = WCLG27FeatureAlpha(kWCLG27StrengthLongPressMenu, 0.88);
-    CGFloat radius = MIN(22.0, MAX(13.0, CGRectGetHeight(view.bounds) / 5.0));
-    UIView *host = WCLG27EnsureGlassHost(view, radius, alpha);
-    if (host) {
-        WCLG27OrigDecorateGlassHost(host, alpha, radius, YES);
-        [view sendSubviewToBack:host];
-    }
+    if (CGRectGetWidth(b) < 48 || CGRectGetHeight(b) < 24 || CGRectGetWidth(b) > UIScreen.mainScreen.bounds.size.width * 0.90) return NO;
+    return WCLG27StringContains(cls, @[@"Bubble", @"MessageContent", @"MsgContent", @"ChatContent", @"MessageWrap", @"RichCard", @"Emoticon", @"PayCard"]);
 }
 
 static void WCLG27ApplyGenericView(UIView *view) {
@@ -1459,10 +1241,11 @@ static void WCLG27ApplyGenericView(UIView *view) {
         WCLG27ApplyInputGlass(view);
     } else if (WCLG27Feature(kWCLG27FeatureSearchGlass, NO) && WCLG27IsSearchLike(view, cls)) {
         WCLG27ApplySearchGlass(view);
-    } else if (WCLG27Feature(kWCLG27FeatureLongPressMenu, NO) && WCLG27IsLongPressMenuLike(view, cls)) {
-        WCLG27ApplyLongPressMenuGlass(view);
     } else if (WCLG27Feature(kWCLG27FeatureBubbleGlass, NO) && WCLG27IsBubbleLike(view, cls)) {
-        WCLG27OrigApplyChatBubbleGlassToMessageView(view);
+        if (![view isKindOfClass:[UIImageView class]]) view.backgroundColor = [UIColor clearColor];
+        CGFloat alpha = WCLG27FeatureAlpha(kWCLG27StrengthBubble, 0.72);
+        UIView *host = WCLG27EnsureGlassHost(view, 16.0, alpha);
+        if (host) WCLG27StablePolishGlassHost(host, alpha, 16.0, NO);
     }
 }
 
@@ -1614,7 +1397,7 @@ static void WCLG27InstallHomeSearchButton(UIViewController *vc) {
         [button addTarget:(id)button action:@selector(wclg27_tabSearchTap) forControlEvents:UIControlEventTouchUpInside];
         UILongPressGestureRecognizer *lp = [[UILongPressGestureRecognizer alloc] initWithTarget:(id)button action:@selector(wclg27_openSettingsLongPress:)];
         [button addGestureRecognizer:lp];
-        WCLG27OrigApplySearchTabBarToButton(button, 0.90);
+        WCLG27EnsureGlassHost(button, 18, 0.90);
         item = [[UIBarButtonItem alloc] initWithCustomView:button];
         objc_setAssociatedObject(vc, kWCLG27HomeSearchItemKey, item, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
@@ -1627,34 +1410,28 @@ static void WCLG27InstallHomeSearchButton(UIViewController *vc) {
 }
 
 static UIView *WCLG27MakeTitleCapsuleView(NSString *title) {
-    /*
-     Original-style Chat Title Capsule:
-     仿原插件 WCLGApplyChatTitleCapsuleToBar / RemoveChatTitleCapsuleFromBar 思路：
-     不动系统 navigationBar，只替换 titleView；用独立玻璃胶囊承载标题。
-    */
     CGFloat width = WCLG27_CLAMP(title.length * 16.0 + 52.0, 112.0, 236.0);
     UIView *view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, width, 38)];
     view.userInteractionEnabled = NO;
     view.clipsToBounds = NO;
     view.backgroundColor = [UIColor clearColor];
 
-    UIView *host = [[UIView alloc] initWithFrame:view.bounds];
-    host.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    host.tag = kWCLG27GlassTag;
-    host.userInteractionEnabled = NO;
-    [view addSubview:host];
+    UIView *glass = [[UIView alloc] initWithFrame:view.bounds];
+    glass.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    glass.userInteractionEnabled = NO;
+    glass.backgroundColor = [UIColor clearColor];
+    [view addSubview:glass];
 
-    CGFloat alpha = WCLG27FeatureAlpha(kWCLG27StrengthTitle, 0.92);
-    WCLG27OrigDecorateGlassHost(host, alpha, 19.0, YES);
+    UIView *host = WCLG27EnsureGlassHost(glass, 19.0, WCLG27FeatureAlpha(kWCLG27StrengthTitle, 0.92));
+    if (host) WCLG27StablePolishGlassHost(host, WCLG27FeatureAlpha(kWCLG27StrengthTitle, 0.92), 19.0, YES);
 
     UILabel *label = [[UILabel alloc] initWithFrame:CGRectInset(view.bounds, 18, 0)];
-    label.tag = kWCLG27TitleLabelTag;
     label.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     label.text = title ?: @"";
     label.textAlignment = NSTextAlignmentCenter;
     label.font = [UIFont systemFontOfSize:16 weight:UIFontWeightSemibold];
     label.adjustsFontSizeToFitWidth = YES;
-    label.minimumScaleFactor = 0.75;
+    label.minimumScaleFactor = 0.76;
     if (@available(iOS 13.0, *)) label.textColor = [UIColor labelColor]; else label.textColor = [UIColor blackColor];
     [view addSubview:label];
 
@@ -1662,37 +1439,26 @@ static UIView *WCLG27MakeTitleCapsuleView(NSString *title) {
 }
 
 static void WCLG27InstallChatTitleCapsule(UIViewController *vc) {
-    if (!vc || !vc.navigationItem) return;
-
+    if (!vc) return;
     if (!WCLG27Feature(kWCLG27FeatureChatTitleCapsule, NO)) {
         id original = objc_getAssociatedObject(vc, kWCLG27OriginalTitleViewKey);
-        if (original) {
-            vc.navigationItem.titleView = [original isKindOfClass:[NSNull class]] ? nil : original;
-            objc_setAssociatedObject(vc, kWCLG27OriginalTitleViewKey, nil, OBJC_ASSOCIATION_ASSIGN);
-            objc_setAssociatedObject(vc, kWCLG27TitleCapsuleKey, nil, OBJC_ASSOCIATION_ASSIGN);
-        }
+        if (original) vc.navigationItem.titleView = [original isKindOfClass:[NSNull class]] ? nil : original;
         return;
     }
-
     if (!WCLG27IsChatController(vc)) return;
-
     NSString *title = vc.navigationItem.title ?: vc.title ?: @"";
-    if (title.length == 0 || WCLG27TitleLooksLikeHome(title)) return;
-
+    if (title.length == 0) return;
     if (!objc_getAssociatedObject(vc, kWCLG27OriginalTitleViewKey)) {
         objc_setAssociatedObject(vc, kWCLG27OriginalTitleViewKey, vc.navigationItem.titleView ?: [NSNull null], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
-
     UIView *capsule = objc_getAssociatedObject(vc, kWCLG27TitleCapsuleKey);
-    UILabel *label = WCLG27OrigFindLabelInView(capsule, 0);
+    UILabel *label = nil;
+    for (UIView *sub in capsule.subviews) if ([sub isKindOfClass:[UILabel class]]) label = (UILabel *)sub;
     if (!capsule || ![label.text isEqualToString:title]) {
         capsule = WCLG27MakeTitleCapsuleView(title);
         objc_setAssociatedObject(vc, kWCLG27TitleCapsuleKey, capsule, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
-
-    if (vc.navigationItem.titleView != capsule) {
-        vc.navigationItem.titleView = capsule;
-    }
+    vc.navigationItem.titleView = capsule;
 }
 
 static void WCLG27ApplyMomentsNavigation(UIViewController *vc) {
@@ -1760,36 +1526,6 @@ static void WCLG27ScanAllWindows(void) {
 
 
 
-
-#pragma mark - Original-style Keyboard Refresh
-
-static void WCLG27OrigKeyboardRefreshAll(__unused NSNotification *note) {
-    if (!WCLG27RuntimeEnabled()) return;
-    if (WCLG27Feature(kWCLG27FeatureInputGlass, NO) ||
-        WCLG27Feature(kWCLG27FeatureSearchGlass, NO) ||
-        WCLG27Feature(kWCLG27FeatureBubbleGlass, NO)) {
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.05 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            WCLG27ScanAllWindows();
-        });
-    }
-}
-
-static void WCLG27OrigInstallKeyboardObserver(void) {
-    static BOOL installed = NO;
-    if (installed) return;
-    installed = YES;
-    NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
-    [nc addObserverForName:UIKeyboardWillShowNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
-        WCLG27OrigKeyboardRefreshAll(note);
-    }];
-    [nc addObserverForName:UIKeyboardWillHideNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
-        WCLG27OrigKeyboardRefreshAll(note);
-    }];
-    [nc addObserverForName:UIKeyboardDidChangeFrameNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
-        WCLG27OrigKeyboardRefreshAll(note);
-    }];
-}
-
 #pragma mark - WCLG27 Crash Guard
 
 static NSString * const kWCLG27BootingKey = @"wclg27m_booting_previous_launch";
@@ -1805,15 +1541,13 @@ static void WCLG27DisableAllPrefsForCrashGuard(void) {
         @"wclg27m_feature_search_glass",
         @"wclg27m_feature_input_glass",
         @"wclg27m_feature_bubble_glass",
-        @"wclg27m_feature_long_press_menu",
         @"wclg27m_feature_chat_title_capsule",
         @"wclg27m_feature_moments_nav",
         @"wclg27m_feature_hide_home_title",
         @"wclg27m_feature_tab_right_search",
         @"wclg27m_feature_home_search_button",
         @"wclg27m_feature_home_pure_bg",
-        @"wclg27m_feature_hide_pinned_bg",
-        @"wclg27m_feature_floating_ball"
+        @"wclg27m_feature_hide_pinned_bg"
     ];
     for (NSString *key in keys) {
         [d setBool:NO forKey:key];
@@ -1862,15 +1596,13 @@ static BOOL WCLG27AnyFeatureEnabled(void) {
         @"wclg27m_feature_search_glass",
         @"wclg27m_feature_input_glass",
         @"wclg27m_feature_bubble_glass",
-        @"wclg27m_feature_long_press_menu",
         @"wclg27m_feature_chat_title_capsule",
         @"wclg27m_feature_moments_nav",
         @"wclg27m_feature_hide_home_title",
         @"wclg27m_feature_tab_right_search",
         @"wclg27m_feature_home_search_button",
         @"wclg27m_feature_home_pure_bg",
-        @"wclg27m_feature_hide_pinned_bg",
-        @"wclg27m_feature_floating_ball"
+        @"wclg27m_feature_hide_pinned_bg"
     ];
     for (NSString *key in keys) {
         if ([d boolForKey:key]) return YES;
@@ -2253,8 +1985,8 @@ static UIVisualEffect *WCLG27DarkGlassEffect(void) {
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     switch (section) {
         case 0: return 2;
-        case 1: return [[self featureRows] count];
-        case 2: return [[self sliderRows] count];
+        case 1: return 12;
+        case 2: return 8;
         case 3: return 2;
         case 4: return 4;
         default: return 0;
@@ -2305,20 +2037,19 @@ static UIVisualEffect *WCLG27DarkGlassEffect(void) {
 }
 - (NSArray<NSDictionary *> *)featureRows {
     return @[
-        @{@"title": @"① 底部 TabBar 原插件风格", @"detail": @"仿 WCLGTabBarItemViewsInTabBar / GetTabBarPlatterRectInView", @"key": kWCLG27FeatureTabBar, @"default": @NO},
-        @{@"title": @"② 聊天标题胶囊", @"detail": @"仿 WCLGApplyChatTitleCapsuleToBar，进入聊天页后生效", @"key": kWCLG27FeatureChatTitleCapsule, @"default": @NO},
-        @{@"title": @"③ 聊天输入栏玻璃", @"detail": @"仿 ChatBottomGlass / InputToolView 思路，先保守识别", @"key": kWCLG27FeatureInputGlass, @"default": @NO},
-        @{@"title": @"④ 长按菜单玻璃", @"detail": @"仿 WCLGApplyLongPressMenuGlass，长按弹出菜单时生效", @"key": kWCLG27FeatureLongPressMenu, @"default": @NO},
-        @{@"title": @"⑤ 搜索框玻璃", @"detail": @"搜索框/搜索胶囊玻璃化", @"key": kWCLG27FeatureSearchGlass, @"default": @NO},
-        @{@"title": @"⑤ 首页右上角搜索按钮", @"detail": @"替代首页原搜索框，点击代理原搜索入口", @"key": kWCLG27FeatureHomeSearchButton, @"default": @NO},
-        @{@"title": @"⑤ 底部右侧搜索按钮", @"detail": @"TabBar 右侧附加搜索胶囊，长按可打开设置", @"key": kWCLG27FeatureTabRightSearch, @"default": @NO},
-        @{@"title": @"⑥ 聊天气泡/卡片玻璃", @"detail": @"聊天气泡、富媒体卡片玻璃化，风险较高，建议最后测试", @"key": kWCLG27FeatureBubbleGlass, @"default": @NO},
-        @{@"title": @"顶部导航栏玻璃", @"detail": @"通用导航栏玻璃层", @"key": kWCLG27FeatureNavBar, @"default": @NO},
-        @{@"title": @"朋友圈导航栏优化", @"detail": @"朋友圈顶部导航栏透明/玻璃效果", @"key": kWCLG27FeatureMomentsNav, @"default": @NO},
-        @{@"title": @"首页标题隐藏", @"detail": @"隐藏首页顶部 WeChat/微信标题", @"key": kWCLG27FeatureHideHomeTitle, @"default": @NO},
-        @{@"title": @"主页背景纯色", @"detail": @"开启后使用颜色选择器里的主页背景色", @"key": kWCLG27FeatureHomePureBG, @"default": @NO},
-        @{@"title": @"置顶聊天背景隐藏", @"detail": @"弱化置顶聊天灰底", @"key": kWCLG27FeatureHidePinnedBG, @"default": @NO},
-        @{@"title": @"备用悬浮球入口", @"detail": @"插件管理收纳失败时用于打开设置", @"key": kWCLG27FeatureFloatingBall, @"default": @NO}
+        @{@"title": @"底部 TabBar 玻璃", @"key": kWCLG27FeatureTabBar, @"default": @NO},
+        @{@"title": @"顶部导航栏玻璃", @"key": kWCLG27FeatureNavBar, @"default": @NO},
+        @{@"title": @"搜索框玻璃", @"key": kWCLG27FeatureSearchGlass, @"default": @NO},
+        @{@"title": @"聊天输入栏玻璃", @"key": kWCLG27FeatureInputGlass, @"default": @NO},
+        @{@"title": @"聊天气泡/卡片玻璃", @"key": kWCLG27FeatureBubbleGlass, @"default": @NO},
+        @{@"title": @"聊天标题胶囊", @"key": kWCLG27FeatureChatTitleCapsule, @"default": @NO},
+        @{@"title": @"朋友圈导航栏优化", @"key": kWCLG27FeatureMomentsNav, @"default": @NO},
+        @{@"title": @"首页标题隐藏", @"key": kWCLG27FeatureHideHomeTitle, @"default": @NO},
+        @{@"title": @"底部 TabBar 右侧搜索按钮", @"key": kWCLG27FeatureTabRightSearch, @"default": @NO},
+        @{@"title": @"首页右上角搜索按钮替代原搜索框", @"key": kWCLG27FeatureHomeSearchButton, @"default": @NO},
+        @{@"title": @"主页背景纯色", @"key": kWCLG27FeatureHomePureBG, @"default": @NO},
+        @{@"title": @"置顶聊天背景隐藏", @"key": kWCLG27FeatureHidePinnedBG, @"default": @NO},
+        @{@"title": @"备用悬浮球入口", @"key": kWCLG27FeatureFloatingBall, @"default": @NO}
     ];
 }
 - (NSArray<NSDictionary *> *)sliderRows {
@@ -2329,7 +2060,6 @@ static UIVisualEffect *WCLG27DarkGlassEffect(void) {
         @{@"title": @"搜索框强度", @"detail": @"搜索胶囊/搜索框", @"key": kWCLG27StrengthSearch, @"default": @0.86},
         @{@"title": @"输入栏强度", @"detail": @"聊天底部输入栏", @"key": kWCLG27StrengthInput, @"default": @0.88},
         @{@"title": @"气泡强度", @"detail": @"聊天气泡、富媒体卡片", @"key": kWCLG27StrengthBubble, @"default": @0.72},
-        @{@"title": @"长按菜单强度", @"detail": @"长按菜单/编辑菜单玻璃", @"key": kWCLG27StrengthLongPressMenu, @"default": @0.88},
         @{@"title": @"标题胶囊强度", @"detail": @"聊天页标题胶囊", @"key": kWCLG27StrengthTitle, @"default": @0.92},
         @{@"title": @"朋友圈导航强度", @"detail": @"朋友圈顶部栏", @"key": kWCLG27StrengthMoments, @"default": @0.96}
     ];
@@ -2392,7 +2122,6 @@ static UIVisualEffect *WCLG27DarkGlassEffect(void) {
     } else if (indexPath.section == 1) {
         NSDictionary *row = [self featureRows][indexPath.row];
         cell.textLabel.text = row[@"title"];
-        cell.detailTextLabel.text = row[@"detail"];
         cell.imageView.image = [self badgeWithText:@"开" color:(indexPath.row % 2 == 0 ? WCLG27SettingsAccentColor() : WCLG27SettingsPurpleColor())];
         UISwitch *sw = [[UISwitch alloc] init];
         sw.on = WCLG27Bool(row[@"key"], [row[@"default"] boolValue]);
@@ -2427,7 +2156,7 @@ static UIVisualEffect *WCLG27DarkGlassEffect(void) {
             cell.imageView.image = [self badgeWithText:@"清" color:[UIColor colorWithRed:1.0 green:0.24 blue:0.42 alpha:1.0]];
         } else {
             cell.textLabel.text = @"版本说明";
-            cell.detailTextLabel.text = @"v1.0-1 · 原插件模块开关版 · 默认全关";
+            cell.detailTextLabel.text = @"v1.0-1 · 安全启动版 · 默认全关";
             cell.imageView.image = [self badgeWithText:@"i" color:WCLG27SettingsPurpleColor()];
         }
     }
@@ -2486,7 +2215,7 @@ static UIVisualEffect *WCLG27DarkGlassEffect(void) {
             [alert addAction:[UIAlertAction actionWithTitle:@"清除并关闭" style:UIAlertActionStyleDestructive handler:^(__unused UIAlertAction *action) { [self purgePrefsAndDisable]; }]];
             [self presentViewController:alert animated:YES completion:nil];
         } else if (indexPath.row == 3) {
-            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"版本说明" message:@"WCLiquidGlass27 v1.0-1\n原插件模块开关版，默认全关。\n按底部、标题、输入栏、长按菜单、搜索、气泡分开测试。" preferredStyle:UIAlertControllerStyleAlert];
+            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"版本说明" message:@"WCLiquidGlass27 v2.7-27\n独立重写版，不包含授权/联网校验。\n新增：清除插件配置并关闭、外部清理标记文件。" preferredStyle:UIAlertControllerStyleAlert];
             [alert addAction:[UIAlertAction actionWithTitle:@"知道了" style:UIAlertActionStyleCancel handler:nil]];
             [self presentViewController:alert animated:YES completion:nil];
         }
@@ -2505,10 +2234,10 @@ static UIVisualEffect *WCLG27DarkGlassEffect(void) {
 - (void)resetPrefs {
     NSArray *keys = @[
         kWCLG27EnabledKey, kWCLG27FeatureTabBar, kWCLG27FeatureNavBar, kWCLG27FeatureSearchGlass, kWCLG27FeatureInputGlass,
-        kWCLG27FeatureBubbleGlass, kWCLG27FeatureLongPressMenu, kWCLG27FeatureChatTitleCapsule, kWCLG27FeatureMomentsNav, kWCLG27FeatureHideHomeTitle,
+        kWCLG27FeatureBubbleGlass, kWCLG27FeatureChatTitleCapsule, kWCLG27FeatureMomentsNav, kWCLG27FeatureHideHomeTitle,
         kWCLG27FeatureTabRightSearch, kWCLG27FeatureHomeSearchButton, kWCLG27FeatureHomePureBG, kWCLG27FeatureHidePinnedBG, kWCLG27FeatureFloatingBall,
         kWCLG27StrengthGlobal, kWCLG27StrengthTabBar, kWCLG27StrengthNavBar, kWCLG27StrengthSearch, kWCLG27StrengthInput,
-        kWCLG27StrengthBubble, kWCLG27StrengthLongPressMenu, kWCLG27StrengthTitle, kWCLG27StrengthMoments,
+        kWCLG27StrengthBubble, kWCLG27StrengthTitle, kWCLG27StrengthMoments,
         WCLG27ColorComponentKey(kWCLG27TintColorKey, @"r"), WCLG27ColorComponentKey(kWCLG27TintColorKey, @"g"),
         WCLG27ColorComponentKey(kWCLG27TintColorKey, @"b"), WCLG27ColorComponentKey(kWCLG27TintColorKey, @"a"),
         WCLG27ColorComponentKey(kWCLG27HomeColorKey, @"r"), WCLG27ColorComponentKey(kWCLG27HomeColorKey, @"g"),
@@ -2786,8 +2515,7 @@ static BOOL WCLG27NeedsDeepViewScan(void) {
     if (!WCLG27RuntimeEnabled()) return NO;
     return WCLG27Feature(kWCLG27FeatureInputGlass, NO) ||
            WCLG27Feature(kWCLG27FeatureSearchGlass, NO) ||
-           WCLG27Feature(kWCLG27FeatureBubbleGlass, NO) ||
-           WCLG27Feature(kWCLG27FeatureLongPressMenu, NO);
+           WCLG27Feature(kWCLG27FeatureBubbleGlass, NO);
 }
 
 static BOOL WCLG27NeedsControllerSpecificScan(void) {
@@ -2801,22 +2529,6 @@ static BOOL WCLG27NeedsControllerSpecificScan(void) {
 }
 
 #pragma mark - Hooks
-
-
-%hook UIView
-- (void)didMoveToWindow {
-    %orig;
-    if (WCLG27Feature(kWCLG27FeatureLongPressMenu, NO)) {
-        WCLG27ApplyLongPressMenuGlass((UIView *)self);
-    }
-}
-- (void)layoutSubviews {
-    %orig;
-    if (WCLG27Feature(kWCLG27FeatureLongPressMenu, NO)) {
-        WCLG27ApplyLongPressMenuGlass((UIView *)self);
-    }
-}
-%end
 
 %hook UITabBar
 - (void)layoutSubviews {
@@ -2931,7 +2643,6 @@ static void WCLG27SchedulePluginManagerEntryRegistrationStrong(void) {
     @autoreleasepool {
         
         WCLG27CrashGuardBeginLaunch();
-        WCLG27OrigInstallKeyboardObserver();
 if (![NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.tencent.xin"]) return;
         WCLG27ConsumeExternalClearConfigMarkerIfNeeded();
         [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidBecomeActiveNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(__unused NSNotification *note) {
