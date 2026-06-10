@@ -433,6 +433,64 @@ static CGRect WCLG27SearchGlassFrame(UIView *view) {
     return CGRectMake(horizontal, y, MAX(2.0, w - horizontal * 2.0), targetH);
 }
 
+
+#pragma mark - Original-style Search Glass Helpers
+
+static BOOL WCLG27OrigLooksLikeSearchView(UIView *view, NSString *cls) {
+    if (!view || view.hidden || view.alpha < 0.05 || !view.window) return NO;
+    if ([view isKindOfClass:[UITableView class]] ||
+        [view isKindOfClass:[UICollectionView class]] ||
+        [view isKindOfClass:[UINavigationBar class]] ||
+        [view isKindOfClass:[UITabBar class]]) return NO;
+
+    CGRect b = view.bounds;
+    if (CGRectGetWidth(b) < 90 || CGRectGetHeight(b) < 26 || CGRectGetHeight(b) > 88) return NO;
+
+    BOOL nameLike = WCLG27StringContains(cls, @[
+        @"Search", @"Find", @"SearchBar", @"SearchView", @"SearchField", @"SearchCell", @"UISearch"
+    ]);
+    if (nameLike) return YES;
+
+    UIView *input = WCLG27FindTextInputViewInView(view, 0);
+    if (input) {
+        NSString *placeholder = @"";
+        if ([input isKindOfClass:[UITextField class]]) placeholder = ((UITextField *)input).placeholder ?: @"";
+        if ([placeholder containsString:@"搜索"] ||
+            [placeholder rangeOfString:@"Search" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            return YES;
+        }
+    }
+
+    return NO;
+}
+
+static CGRect WCLG27OrigSearchPlatterFrame(UIView *container, UIView *input) {
+    if (input && input != container && input.superview) {
+        CGRect f = [input.superview convertRect:input.frame toView:container];
+        if (CGRectGetWidth(f) > 40 && CGRectGetHeight(f) > 20) {
+            return CGRectIntegral(CGRectInset(f, -2.0, -1.5));
+        }
+    }
+
+    CGRect b = container.bounds;
+    CGFloat w = CGRectGetWidth(b);
+    CGFloat h = CGRectGetHeight(b);
+    CGFloat insetX = (w > UIScreen.mainScreen.bounds.size.width * 0.70) ? 10.0 : 3.0;
+    CGFloat targetH = MIN(40.0, MAX(30.0, h - 8.0));
+    CGFloat y = MAX(2.0, (h - targetH) * 0.5);
+    return CGRectIntegral(CGRectMake(insetX, y, MAX(4.0, w - insetX * 2.0), targetH));
+}
+
+static void WCLG27OrigApplySearchTabBarToButton(UIButton *button, CGFloat alpha) {
+    if (!button) return;
+    CGFloat radius = MIN(22.0, MAX(16.0, CGRectGetHeight(button.bounds) / 2.0));
+    UIView *host = WCLG27EnsureGlassHost(button, radius, alpha);
+    if (host) {
+        WCLG27OrigDecorateGlassHost(host, alpha, radius, YES);
+        [button sendSubviewToBack:host];
+    }
+}
+
 static void WCLG27ApplySearchGlass(UIView *view) {
     if (!view || !WCLG27RuntimeEnabled()) return;
     if (!WCLG27Feature(kWCLG27FeatureSearchGlass, NO)) {
