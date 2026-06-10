@@ -55,12 +55,6 @@ jobs:
           OUT="artifacts/wcliquidglass27_project_v5-dylib"
           mkdir -p "$OUT"
 
-          echo "Searching real dylib candidates..."
-          find "wcliquidglass27_project_v5/.theos" -type f -name "wcliquidglass27.dylib" \
-            ! -path "*.dSYM/*" \
-            ! -path "*/DWARF/*" \
-            -print
-
           REAL_DYLIB=""
           while IFS= read -r f; do
             INFO="$(file "$f")"
@@ -81,10 +75,7 @@ jobs:
 
           cp "$REAL_DYLIB" "$OUT/wcliquidglass27.dylib"
           cp "wcliquidglass27_project_v5/wcliquidglass27.plist" "$OUT/" || true
-
-          echo "Selected dylib:"
           file "$OUT/wcliquidglass27.dylib"
-          echo "Output files:"
           ls -lah "$OUT"
 
       - name: Upload dylib artifact
